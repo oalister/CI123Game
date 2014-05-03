@@ -20,8 +20,7 @@ SFApp::SFApp() : fire(0), is_running(true), pcol(true), direction(1), score(0) {
 
   const int number_of_coins = 3;
   for(int i=0; i<number_of_coins; i++) {
-
-    auto coin = make_shared<SFAsset>(SFASSET_COIN);
+  	auto coin = make_shared<SFAsset>(SFASSET_COIN);
     auto pos   = Point2(((surface->w/number_of_coins+1))*(i) , 460.0f);
     coin->SetPosition(pos);
     coins.push_back(coin);
@@ -29,7 +28,6 @@ SFApp::SFApp() : fire(0), is_running(true), pcol(true), direction(1), score(0) {
 
   const int number_of_walls = 4;
   for(int i=0; i<number_of_walls; i++) {
-
     auto wall = make_shared<SFAsset>(SFASSET_WALL);
     auto pos   = Point2((surface->w/(number_of_walls+1)) * (i+1), 250.0f);
     wall->SetPosition(pos);
@@ -37,10 +35,11 @@ SFApp::SFApp() : fire(0), is_running(true), pcol(true), direction(1), score(0) {
   }
 
 
-    auto wall = make_shared<SFAsset>(SFASSET_WALL);
-    auto pos   = Point2(surface->w, 400.0f);
-    wall->SetPosition(pos);
-    walls.push_back(wall);
+//wall to reset alien position
+ auto wall = make_shared<SFAsset>(SFASSET_WALL);
+ auto pos   = Point2(surface->w, 400.0f);
+ wall->SetPosition(pos);
+ walls.push_back(wall);
 
  
 }
@@ -62,11 +61,12 @@ void SFApp::OnEvent(SFEvent& event) {
     OnUpdateWorld();
     OnRender();
     break;
+
   case SFEVENT_PLAYER_DOWN:
 direction=180;    
 break;
-  case SFEVENT_PLAYER_UP:
 
+  case SFEVENT_PLAYER_UP:
     player->GoNorth();
 direction=0;
     break;
@@ -74,9 +74,11 @@ direction=0;
   case SFEVENT_PLAYER_LEFT:
 direction=270;
     break;
+
   case SFEVENT_PLAYER_RIGHT:
 direction=90;
     break;
+
   case SFEVENT_FIRE:
     fire ++;
     std::stringstream sstm;
@@ -108,7 +110,7 @@ switch (direction) {
 break;
   case 90:player->GoEast();    
     break;
-      
+    
   case 0:player->GoNorth();
 break;
 }
@@ -125,98 +127,89 @@ break;
 
  //  Update enemy positions
   for(auto a : aliens) {
-
-
 a->GoEast();
 }
-
-
-if(pcol==true){
-pcol=false;
-}   
-else{
-pcol=true;
-}
-
   
 
   // Detect collisions
-  for(auto p : projectiles) {
-    for(auto a : aliens) {
-      if(p->CollidesWith(a)) {
-        if(p->IsAlive()) {
-	p->HandleCollision();
-        a->HandleCollision();
-}}}}
+ 
+	for(auto p : projectiles) {
+	  for(auto a : aliens) {
+	    if(p->CollidesWith(a)) {
+        if(p->IsAlive()) {        //check if projectile is alive to stop dead projectiles interacing with objects
+					p->HandleCollision();
+        	a->HandleCollision();
+				}
+			}
+		}	
+	}
+	
+	for(auto p : projectiles) {
+		for(auto w : walls){
+			if(p->CollidesWith(w)){
+      p->HandleCollision();
+			}
+		}
+	}
 
-for(auto p : projectiles) {
-    for(auto w : walls){
-if(p->CollidesWith(w)){
-        p->HandleCollision();
-}}}
-
-for(auto a : aliens) {
-    for(auto w : walls){
-if(a->CollidesWith(w)){
+	for(auto a : aliens) {
+		for(auto w : walls){
+			if(a->CollidesWith(w)){
 				auto pos   = Point2(0.0f,400.0f);
-        a->SetPosition(pos);
+      	a->SetPosition(pos);
 }}}
 
-    for(auto a : aliens) {
-      if(a->CollidesWith(player)) {
-cerr << "Game over!" << endl;
-cerr << "Score: " << score << endl;
-is_running = false;
+ for(auto a : aliens) {
+ 	if(a->CollidesWith(player)) {
+		cerr << "Game over!" << endl;
+		cerr << "Score: " << score << endl;
+		is_running = false;
 	}} 
 
  for(auto c : coins) {
-if(c->IsAlive()) {
-if(player->CollidesWith(c)) {
+	if(c->IsAlive()) {
+		if(player->CollidesWith(c)) {
+			c->HandleCollision();
+	    score=score+10;
+	    std::stringstream sstm;
+	    sstm << "Score " << score;
+	    SDL_WM_SetCaption(sstm.str().c_str(),  sstm.str().c_str());
+}}}
 
-		c->HandleCollision();
-    score=score+10;
-    std::stringstream sstm;
-    sstm << "Score " << score;
-    SDL_WM_SetCaption(sstm.str().c_str(),  sstm.str().c_str());
-}
-}
-}
-
-   for(auto w : walls) {
-   while(w->CollidesWith(player)) {
- switch (direction) {
-  case 0:player->GoSouth();
-     break;
-  case 90:player->GoWest();
-break;
-  case 270:player->GoEast();    
-    break;
-      
-  case 180:player->GoNorth();
-break;
+	for(auto w : walls) {
+	  while(w->CollidesWith(player)) {
+			switch (direction) {
+  		case 0:player->GoSouth();
+     	break;
+  		case 90:player->GoWest();
+			break;
+  		case 270:player->GoEast();    
+    	break;
+      case 180:player->GoNorth();
+			break;
 	}}}
 
   
 
   // remove dead aliens (the long way)
+  //check if all aliens are dead then ends the game
   list<shared_ptr<SFAsset>> tmp;
   int comp=0;
-for(auto a : aliens) {
-
-    if(a->IsAlive()) {
+	for(auto a : aliens) {
+		if(a->IsAlive()) {
       tmp.push_back(a);
-comp++;
+			comp++;
     }
   }
-if (comp==0)
-{
-cerr << "Game Complete!" << endl;
-cerr << "Score: " << score << endl;
-is_running = false;
-}
-  aliens.clear();
+	if (comp==0)
+	{
+	cerr << "Game Complete!" << endl;
+	cerr << "Score: " << score << endl;
+	is_running = false;
+	}
+	aliens.clear();
   aliens = list<shared_ptr<SFAsset>>(tmp);
-}
+	}
 
 void SFApp::OnRender() {
 
@@ -239,7 +232,7 @@ void SFApp::OnRender() {
   for(auto c: coins) {
    if(c->IsAlive()) {c->OnRender(surface);}
   }
-for(auto w: walls) {
+	for(auto w: walls) {
    if(w->IsAlive()) {w->OnRender(surface);}
   }
 
